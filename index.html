@@ -78,6 +78,13 @@ h2{font-family:var(--mincho);font-size:15px;color:var(--green);letter-spacing:.1
 .uploadbox.has-photo{padding:0;border-style:solid}
 .uploadbox.has-photo img{display:block;width:100%;border-radius:5px}
 
+.photo-remove{
+  display:block;width:100%;margin-top:8px;padding:9px;
+  background:#fff;border:1px solid #C99A82;color:#B25A3A;
+  border-radius:3px;font-family:var(--gothic);font-size:12px;cursor:pointer;
+}
+.photo-remove:active{background:#FBF0EC}
+
 .demo-note{
   background:#FBF7EC;border:1px solid var(--line);border-radius:4px;
   padding:9px 11px;margin-bottom:14px;font-size:10.5px;color:var(--ink-light);line-height:1.7;
@@ -204,12 +211,15 @@ svg.overlay .hit.sel .tag text{fill:#fff}
 
     <div class="field">
       <label>今日の耳の写真（任意）</label>
-      <label class="uploadbox" id="uploadbox">
-        <div class="icon">📷</div>
-        <div class="t1">タップして写真を選択</div>
-        <div class="t2">カード上部に「今日の記録」として掲載されます</div>
-        <input type="file" accept="image/*" capture="environment" id="photoInput">
-      </label>
+      <div class="photo-wrap" id="photoWrap">
+        <label class="uploadbox" id="uploadbox">
+          <div class="icon">📷</div>
+          <div class="t1">タップして写真を選択</div>
+          <div class="t2">カード上部に「今日の記録」として掲載されます</div>
+          <input type="file" accept="image/*" capture="environment" id="photoInput">
+        </label>
+        <button type="button" class="photo-remove" id="photoRemove" style="display:none">✕ この写真を削除</button>
+      </div>
     </div>
   </section>
 
@@ -249,8 +259,8 @@ svg.overlay .hit.sel .tag text{fill:#fff}
 </div>
 
 <div class="bar">
-  <button class="ghost" id="reset">最初から</button>
-  <button class="solid" id="save">画像を保存</button>
+  <button class="ghost" id="reset">このページの入力をリセット</button>
+  <button class="solid" id="save" style="display:none">カード画像を保存</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -324,6 +334,21 @@ CONCERNS.forEach(c=>{
 /* ---------- 今日の記録写真（任意） ---------- */
 const photoInput = document.getElementById("photoInput");
 const uploadbox = document.getElementById("uploadbox");
+const photoRemove = document.getElementById("photoRemove");
+
+function clearPhoto(){
+  state.photoDataUrl = null;
+  uploadbox.classList.remove("has-photo");
+  uploadbox.innerHTML = `
+    <div class="icon">📷</div>
+    <div class="t1">タップして写真を選択</div>
+    <div class="t2">カード上部に「今日の記録」として掲載されます</div>`;
+  uploadbox.appendChild(photoInput);
+  photoInput.value = "";
+  photoRemove.style.display = "none";
+  drawCard();
+}
+
 photoInput.addEventListener("change", (e)=>{
   const file = e.target.files[0];
   if(!file) return;
@@ -333,10 +358,13 @@ photoInput.addEventListener("change", (e)=>{
     uploadbox.classList.add("has-photo");
     uploadbox.innerHTML = `<img src="${state.photoDataUrl}" alt="今日の耳の写真">`;
     uploadbox.appendChild(photoInput);
+    photoRemove.style.display = "block";
     drawCard();
   };
   reader.readAsDataURL(file);
 });
+
+photoRemove.addEventListener("click", clearPhoto);
 
 function markupSVG(interactive){
   const flip = state.side === "right";
@@ -489,8 +517,23 @@ document.querySelectorAll(".steps button").forEach(b=>{
     b.classList.add("on");
     document.getElementById("p"+b.dataset.s).classList.add("on");
     window.scrollTo(0,0);
+    document.getElementById("save").style.display = (b.dataset.s === "2") ? "block" : "none";
+    updateResetButton(b.dataset.s);
   });
 });
+
+const resetBtn = document.getElementById("reset");
+function updateResetButton(step){
+  if(step === "0"){
+    resetBtn.style.display = "block";
+    resetBtn.textContent = "お客様情報をリセット";
+  } else if(step === "1"){
+    resetBtn.style.display = "block";
+    resetBtn.textContent = "選択したツボをリセット";
+  } else {
+    resetBtn.style.display = "none";
+  }
+}
 document.querySelectorAll(".side button").forEach(b=>{
   b.addEventListener("click", ()=>{
     document.querySelectorAll(".side button").forEach(x=>x.classList.remove("on"));
@@ -503,18 +546,20 @@ document.querySelectorAll(".side button").forEach(b=>{
   document.getElementById(id).addEventListener("input", drawCard));
 
 document.getElementById("reset").addEventListener("click", ()=>{
-  if(!confirm("入力をすべて消して最初から始めます。よろしいですか？")) return;
-  state.sel.clear(); state.concerns.clear(); state.photoDataUrl = null;
-  document.querySelectorAll('#chips input').forEach(i=>i.checked=false);
-  ["name","other"].forEach(id=>document.getElementById(id).value="");
-  uploadbox.classList.remove("has-photo");
-  uploadbox.innerHTML = `
-    <div class="icon">📷</div>
-    <div class="t1">タップして写真を選択</div>
-    <div class="t2">カード上部に「今日の記録」として掲載されます</div>`;
-  uploadbox.appendChild(photoInput);
-  setToday(); render();
-  document.querySelector('.steps button[data-s="0"]').click();
+  const currentStep = document.querySelector('.pane.on').id.replace('p','');
+
+  if(currentStep === "0"){
+    if(!confirm("お名前・お悩み・写真など、お客様情報の入力をリセットします。よろしいですか？")) return;
+    state.concerns.clear();
+    document.querySelectorAll('#chips input').forEach(i=>i.checked=false);
+    ["name","other"].forEach(id=>document.getElementById(id).value="");
+    clearPhoto();
+    setToday(); drawCard();
+  } else if(currentStep === "1"){
+    if(!confirm("選択したツボをすべて解除します。よろしいですか？")) return;
+    state.sel.clear();
+    render();
+  }
 });
 
 document.getElementById("save").addEventListener("click", async ()=>{
@@ -539,6 +584,7 @@ document.getElementById("save").addEventListener("click", async ()=>{
 function setToday(){ document.getElementById("date").value = new Date().toISOString().slice(0,10); }
 setToday();
 render();
+updateResetButton("0");
 </script>
 </body>
 </html>
