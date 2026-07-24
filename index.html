@@ -185,6 +185,27 @@ svg.overlay .hit.sel .tag text{fill:#fff}
 .bar .solid{background:var(--green);color:#fff}
 .bar button:disabled{opacity:.35;cursor:not-allowed}
 .hint{font-size:10px;color:var(--ink-light);text-align:center;margin-top:10px;line-height:1.7}
+
+#imgModalOverlay{
+  position:fixed;inset:0;background:rgba(30,26,20,.82);z-index:999;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+#imgModalOverlay .modal-inner{
+  background:#fff;border-radius:6px;padding:16px;max-width:92vw;max-height:88vh;
+  overflow-y:auto;text-align:center;
+}
+#imgModalOverlay .modal-hint{
+  font-family:var(--gothic);font-size:13px;color:var(--green);margin-bottom:10px;
+  font-weight:bold;letter-spacing:.03em;
+}
+#imgModalOverlay img{
+  max-width:100%;height:auto;border:1px solid var(--line);border-radius:3px;
+  display:block;margin:0 auto;
+}
+#imgModalOverlay button{
+  margin-top:14px;padding:10px 28px;border:1px solid var(--green);border-radius:3px;
+  background:#fff;color:var(--green);font-family:var(--gothic);font-size:13px;cursor:pointer;
+}
 </style>
 </head>
 <body>
@@ -277,43 +298,46 @@ const POINTS = [
    x:112, y:62, side:"L", ty:26,
    effect:"リラックス効果が高く、ストレスや不安を和らげ心も落ち着けます。"},
   {id:"kata", name:"肩", kana:"かた", area:"舟状窩",
-   x:150, y:60, side:"R", ty:22,
+   x:150, y:68, side:"R", ty:22,
    effect:"肩こりや首の重だるさに。血流を促し、コリをやわらげます。"},
   {id:"keitsui", name:"頸椎", kana:"けいつい", area:"対耳輪",
    x:128, y:95, side:"R", ty:64,
    effect:"首すじのこわばりに。頭を支える負担をやわらげます。"},
   {id:"jinzou", name:"腎", kana:"じん", area:"耳甲介艇",
-   x:98, y:112, side:"L", ty:100,
+   x:100, y:110, side:"L", ty:100,
    effect:"水分代謝を助け、冷えやむくみ、だるさをサポートします。"},
   {id:"koukan", name:"交感", kana:"こうかん", area:"耳輪脚下縁",
    x:112, y:130, side:"L", ty:128,
    effect:"自律神経のバランスを整え、緊張やほてりをしずめます。"},
   {id:"i", name:"胃", kana:"い", area:"耳輪脚周囲",
-   x:106, y:140, side:"L", ty:156,
+   x:108, y:138, side:"L", ty:156,
    effect:"胃の働きを整え、消化不良や食欲不振、胃もたれをサポートします。"},
   {id:"hai", name:"肺", kana:"はい", area:"耳甲介腔",
-   x:96, y:160, side:"L", ty:184,
+   x:92, y:162, side:"L", ty:184,
    effect:"呼吸を深く。息苦しさや、肌の乾燥をやさしく整えます。"},
   {id:"shin", name:"心", kana:"しん", area:"耳甲介腔",
-   x:108, y:175, side:"L", ty:212,
+   x:110, y:170, side:"L", ty:212,
    effect:"動悸や不安感をしずめ、気持ちのゆらぎをやわらげます。"},
   {id:"shinkei", name:"神経衰弱点", kana:"しんけいすいじゃくてん", area:"対珠上縁",
    x:148, y:160, side:"R", ty:118,
    effect:"考えすぎて休まらない時に。頭をしずめ、深い休息へ導きます。"},
+  {id:"kiten", name:"飢点", kana:"きてん", area:"耳珠",
+   x:148, y:174, side:"R", ty:143,
+   effect:"食欲を抑え、過食のコントロールをサポートします。"},
   {id:"hishitsuka", name:"皮質下", kana:"ひしつか", area:"対珠内側",
-   x:140, y:185, side:"R", ty:146,
+   x:140, y:185, side:"R", ty:168,
    effect:"眠りの質を整え、頭の緊張をゆるめます。"},
   {id:"naibunpi", name:"内分泌", kana:"ないぶんぴつ", area:"珠間切痕",
-   x:134, y:202, side:"R", ty:174,
+   x:134, y:202, side:"R", ty:193,
    effect:"ホルモンバランスを整え、自律神経の乱れや女性特有の不調にアプローチします。"},
   {id:"hoho", name:"頬・フェイスライン", kana:"ほほ", area:"耳垂上部",
    x:96, y:222, side:"L", ty:240,
    effect:"むくみやたるみをケアし、すっきりとしたフェイスラインへ。リフトアップ効果も期待できます。"},
   {id:"me", name:"目", kana:"め", area:"耳垂中央",
-   x:140, y:224, side:"R", ty:202,
+   x:122, y:230, side:"R", ty:218,
    effect:"目の疲れやかすみ、頭の重さをやさしくケア。スッキリ感をサポートします。"},
   {id:"kuchi", name:"歯・口", kana:"は・くち", area:"耳垂下部",
-   x:112, y:238, side:"R", ty:230,
+   x:112, y:238, side:"R", ty:243,
    effect:"食いしばりや口まわりの緊張に。あごの力みをゆるめます。"}
 ];
 
@@ -568,18 +592,44 @@ document.getElementById("save").addEventListener("click", async ()=>{
   btn.textContent = "作成中…"; btn.disabled = true;
   try{
     const canvas = await html2canvas(card, {scale:3, backgroundColor:"#FAF8F3", useCORS:true});
-    const a = document.createElement("a");
-    a.href = canvas.toDataURL("image/png");
-    const nm = document.getElementById("name").value.trim() || "card";
-    a.download = `耳つぼカード_${nm}_${new Date().toISOString().slice(0,10)}.png`;
-    a.click();
-    btn.textContent = "保存しました";
-    setTimeout(()=>{ btn.textContent="画像を保存"; btn.disabled=false; }, 1600);
+    const dataUrl = canvas.toDataURL("image/png");
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    if(isIOS){
+      // iPhone/iPadは自動ダウンロードが不安定なため、画像を表示して長押し保存を促す
+      showImageModal(dataUrl);
+      btn.textContent = "画像を保存";
+      btn.disabled = false;
+    } else {
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      const nm = document.getElementById("name").value.trim() || "card";
+      a.download = `耳つぼカード_${nm}_${new Date().toISOString().slice(0,10)}.png`;
+      a.click();
+      btn.textContent = "保存しました";
+      setTimeout(()=>{ btn.textContent="画像を保存"; btn.disabled=false; }, 1600);
+    }
   }catch(e){
     btn.textContent = "保存できません";
     setTimeout(()=>{ btn.textContent="画像を保存"; btn.disabled=false; }, 1600);
   }
 });
+
+function showImageModal(dataUrl){
+  const overlay = document.createElement("div");
+  overlay.id = "imgModalOverlay";
+  overlay.innerHTML = `
+    <div class="modal-inner">
+      <p class="modal-hint">画像を長押しして「写真に保存」を選んでください</p>
+      <img src="${dataUrl}" alt="耳つぼカード">
+      <button type="button" id="modalClose">閉じる</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById("modalClose").addEventListener("click", ()=>{
+    overlay.remove();
+  });
+}
 
 function setToday(){ document.getElementById("date").value = new Date().toISOString().slice(0,10); }
 setToday();
