@@ -166,6 +166,16 @@ svg.overlay .hit.sel .tag text{fill:#fff}
 #card .cardear{margin:6px 0 2px;position:relative;z-index:1;text-align:center}
 #card .cardear .earstage{max-width:170px}
 #card .sec{font-family:var(--mincho);font-size:12px;color:var(--green);letter-spacing:.1em;margin:14px 0 8px;text-align:center;position:relative;z-index:1}
+#card .ptlist{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:3px 6px;
+  margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft);
+  position:relative;z-index:1;
+}
+#card .ptlist .pt{border:none;padding:4px 0}
+#card .ptlist .pt:last-of-type{border:none}
+#card .ptlist .pt .h{gap:4px;flex-wrap:nowrap}
+#card .ptlist .pt .n{font-size:12px;white-space:nowrap}
+#card .ptlist .pt .k{font-size:8px;white-space:nowrap}
 #card .pt{border-top:1px solid var(--line-soft);padding:8px 0;position:relative;z-index:1}
 #card .pt:last-of-type{border-bottom:1px solid var(--line-soft)}
 #card .pt .h{display:flex;align-items:baseline;gap:6px}
@@ -776,14 +786,14 @@ function drawCard(){
 
     ${cardEarHTML}
 
-    ${picked.length ? picked.map((p,i)=>`
+    ${picked.length ? `<div class="ptlist">` + picked.map((p,i)=>`
       <div class="pt">
         <div class="h">
           <div class="no">${i+1}</div>
           <div class="n">${p.name}</div>
           <div class="k">${p.kana}</div>
         </div>
-      </div>`).join("") :
+      </div>`).join("") + `</div>` :
       ((freePts.length || blanks) ? "" : `<div class="pt"><div class="e" style="margin:0;text-align:center">ツボを選択してください</div></div>`)}
 
     ${extraHTML}
